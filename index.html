@@ -588,6 +588,16 @@
             margin-left: 15px;
         }
 
+        .alerta-ine {
+            background: var(--color-secundario);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+            text-align: center;
+        }
+
         /* EFECTOS */
         .pulse-effect {
             animation: pulse 0.5s ease-in-out;
@@ -712,6 +722,10 @@
             <h2 class="modal-titulo" id="titulo-modal">Personalizar Producto</h2>
             <p><strong>Sabor:</strong> <span id="sabor-destacado"></span></p>
             <div id="formulario-opciones"></div>
+            <!-- Alerta de INE -->
+            <div class="alerta-ine" id="alerta-ine">
+                <strong>SE SOLICITARÁ INE AL MOMENTO DE REALIZAR EL PEDIDO</strong>
+            </div>
             <div class="botones-modal">
                 <button class="btn-modal btn-cancelar" id="regresar-modal">CANCELAR</button>
                 <button class="btn-modal btn-confirmar" id="confirmar-opciones">CONFIRMAR</button>
@@ -771,8 +785,12 @@
             
             <div id="info-horarios">
                 <h3>Horarios disponibles:</h3>
-                <p id="horarios-texto">Lunes a Domingo: 15:00 - 20:00 horas</p>
+                <ul id="lista-horarios">
+                    <!-- Los horarios se cargarán dinámicamente -->
+                </ul>
             </div>
+
+            <button class="btn-modal btn-confirmar" id="ver-direccion" style="width:100%; margin:10px 0;">VER DIRECCIÓN EN MAPS</button>
             
             <div class="botones-modal">
                 <button class="btn-modal btn-cancelar" id="regresar-carrito">REGRESAR</button>
@@ -805,7 +823,6 @@
             <p><strong>CLABE:</strong> 012 261 01584933343 3</p>
             <p><strong>COMPROBANTE DE PAGO:</strong> Al momento de realizar el pedido se confirmará la preparación del mismo una vez que se adjunte el comprobante de pago; en el CONCEPTO de la transferencia COLOCA TU NOMBRE o el NOMBRE DE LA PERSONA que realizará la recolección</p>
             <p>Una vez realizado el pago, haz clic en el botón de abajo para enviar tu pedido por WhatsApp con el comprobante.</p>
-            <p id="direccion-confirmacion">📍 Calle Coral 120, colonia Estrella, CDMX</p>
             <div class="botones-modal">
                 <button class="btn-modal btn-cancelar" id="regresar-direccion">CAMBIAR DIRECCIÓN</button>
                 <button class="btn-modal btn-confirmar" id="confirmar-pedido">ENVIAR POR WHATSAPP</button>
@@ -814,7 +831,7 @@
     </div>
 
     <script>
-                // Datos de ubicaciones
+        // Datos de ubicaciones
         const ubicaciones = {
             coral: {
                 nombre: "Calle Coral 120",
@@ -871,7 +888,7 @@
                     precio: 50, 
                     toppings: [
                         { nombre: "Lágrimas de Demonio (Bubble Jelly)", precio: 15 },
-                        { nombre: "Elixir Prohibido (Vodka 2.5 oz)", precio: 15 }
+                        { nombre: "Elixir Prohibido (Vodka 2.5 oz)", precio: 15, requiereINE: true }
                     ]
                 },
                 { 
@@ -882,7 +899,7 @@
                     precio: 50, 
                     toppings: [
                         { nombre: "Lágrimas de Demonio (Bubble Jelly)", precio: 15 },
-                        { nombre: "Elixir Prohibido (Ron Blanco 2.5 oz)", precio: 15 }
+                        { nombre: "Elixir Prohibido (Ron Blanco 2.5 oz)", precio: 15, requiereINE: true }
                     ]
                 },
                 { 
@@ -893,7 +910,7 @@
                     precio: 50, 
                     toppings: [
                         { nombre: "Lágrimas de Demonio (Bubble Jelly)", precio: 15 },
-                        { nombre: "Elixir Prohibido (Ron Blanco 2.5 oz)", precio: 15 }
+                        { nombre: "Elixir Prohibido (Ron Blanco 2.5 oz)", precio: 15, requiereINE: true }
                     ]
                 },
                 { 
@@ -904,7 +921,7 @@
                     precio: 50, 
                     toppings: [
                         { nombre: "Lágrimas de Demonio (Bubble Jelly)", precio: 15 },
-                        { nombre: "Elixir Prohibido (Vodka 1.5 oz/Ron Blanco 1 oz)", precio: 15 }
+                        { nombre: "Elixir Prohibido (Vodka 1.5 oz/Ron Blanco 1 oz)", precio: 15, requiereINE: true }
                     ]
                 }
             ],
@@ -916,7 +933,7 @@
                     sabor: "Café", 
                     precio: 40, 
                     opciones: {
-                        "LECHE": ["Normal(+$10)", "Deslactosada (+$10)"],
+                        "LECHE": ["Normal (+$10)", "Deslactosada (+$10)"],
                         "ENDULZANTE": ["Azúcar", "Sustituto", "Sin endulzante"]
                     },
                     toppings: [
@@ -991,6 +1008,7 @@
         let comboSeleccionado = null;
         let opcionesComboSeleccionadas = {};
         let ubicacionSeleccionada = "coral";
+        let requiereINE = false;
 
         // Inicialización
         document.addEventListener('DOMContentLoaded', function() {
@@ -1027,7 +1045,7 @@
             document.getElementById('confirmar-ubicacion').addEventListener('click', confirmarUbicacion);
             document.getElementById('regresar-combo').addEventListener('click', cerrarModalCombo);
             document.getElementById('confirmar-combo').addEventListener('click', confirmarCombo);
-            document.getElementById('abrir-maps').addEventListener('click', abrirGoogleMaps);
+            document.getElementById('ver-direccion').addEventListener('click', abrirGoogleMaps);
             document.getElementById('regresar-direccion').addEventListener('click', regresarADireccion);
             document.getElementById('confirmar-pedido').addEventListener('click', enviarPedidoWhatsApp);
             
@@ -1102,6 +1120,8 @@
         function seleccionarProducto(producto) {
             productoSeleccionado = producto;
             opcionesSeleccionadas = {};
+            requiereINE = false;
+            document.getElementById('alerta-ine').style.display = 'none';
             mostrarModalOpciones();
         }
 
@@ -1187,6 +1207,8 @@
                             cb.checked = false;
                         });
                         opcionesSeleccionadas.toppings = [];
+                        requiereINE = false;
+                        document.getElementById('alerta-ine').style.display = 'none';
                     }
                 });
                 
@@ -1219,6 +1241,12 @@
                                 opcionesSeleccionadas.toppings = [];
                             }
                             opcionesSeleccionadas.toppings.push(topping.nombre);
+                            
+                            // Verificar si requiere INE
+                            if (topping.requiereINE) {
+                                requiereINE = true;
+                                document.getElementById('alerta-ine').style.display = 'block';
+                            }
                         } else {
                             // Remover topping de las opciones seleccionadas
                             if (opcionesSeleccionadas.toppings) {
@@ -1230,6 +1258,15 @@
                                 // Si no hay toppings seleccionados, marcar "Sin topping"
                                 if (opcionesSeleccionadas.toppings.length === 0) {
                                     document.getElementById('topping-sin').checked = true;
+                                    requiereINE = false;
+                                    document.getElementById('alerta-ine').style.display = 'none';
+                                } else {
+                                    // Verificar si todavía hay algún topping que requiera INE
+                                    requiereINE = opcionesSeleccionadas.toppings.some(t => {
+                                        const toppingObj = productoSeleccionado.toppings.find(topping => topping.nombre === t);
+                                        return toppingObj && toppingObj.requiereINE;
+                                    });
+                                    document.getElementById('alerta-ine').style.display = requiereINE ? 'block' : 'none';
                                 }
                             }
                         }
@@ -1280,10 +1317,10 @@
             // Procesar opciones de cafés y tés
             for (const [opcion, valor] of Object.entries(opcionesSeleccionadas)) {
                 if (opcion !== 'toppings') {
-                    if (valor.includes('Deslactosada')) precioAdicional += 10;
+                    if (valor.includes('Normal') || valor.includes('Deslactosada')) precioAdicional += 10;
                     
                     // Guardar detalles para mostrar en carrito
-                    if (valor.includes('Deslactosada')) {
+                    if (valor.includes('Normal') || valor.includes('Deslactosada')) {
                         detallesVariables.push(`${opcion}: ${valor}`);
                     }
                 }
@@ -1308,7 +1345,8 @@
                 opciones: {...opcionesSeleccionadas},
                 cantidad: 1,
                 precioTotal: precioTotal,
-                detallesVariables: detallesVariables
+                detallesVariables: detallesVariables,
+                requiereINE: requiereINE
             };
             
             // Verificar si ya existe en el carrito
@@ -1601,10 +1639,10 @@
                 // Procesar opciones regulares
                 for (const [opcion, valor] of Object.entries(opciones)) {
                     if (opcion !== 'toppings') {
-                        if (valor.includes('Deslactosada')) precioAdicional += 10;
+                        if (valor.includes('Normal') || valor.includes('Deslactosada')) precioAdicional += 10;
                         
                         // Guardar detalles para mostrar en carrito
-                        if (valor.includes('Deslactosada')) {
+                        if (valor.includes('Normal') || valor.includes('Deslactosada')) {
                             detallesCombo.push(`${nombreProducto}: ${valor}`);
                         }
                     }
@@ -1687,19 +1725,32 @@
         // Actualizar información de horarios según ubicación seleccionada
         function actualizarInfoHorarios() {
             const ubicacion = ubicaciones[ubicacionSeleccionada];
-            const horariosTexto = document.getElementById('horarios-texto');
+            const listaHorarios = document.getElementById('lista-horarios');
             
-            let textoHorarios = '';
+            listaHorarios.innerHTML = '';
             
-            if (ubicacionSeleccionada === 'coral') {
-                textoHorarios = 'Lunes a Jueves: 16:00 - 22:00 hrs<br>Viernes: 16:00 - 02:00 hrs<br>Sábado: 11:00 - 02:30 hrs<br>Domingo: 12:00 - 17:30 hrs';
-            } else if (ubicacionSeleccionada === 'melimarel') {
-                textoHorarios = 'Lunes a Viernes: 16:00 - 20:00 hrs<br>Sábados y Domingos: 15:00 - 20:00 hrs';
-            } else if (ubicacionSeleccionada === 'doris') {
-                textoHorarios = 'Lunes a Viernes: 16:00 - 20:00 hrs<br>Sábado: 14:00 - 20:00 hrs<br>Domingo: Cerrado';
+            const dias = {
+                lunes: 'Lunes',
+                martes: 'Martes',
+                miercoles: 'Miércoles',
+                jueves: 'Jueves',
+                viernes: 'Viernes',
+                sabado: 'Sábado',
+                domingo: 'Domingo'
+            };
+            
+            for (const [dia, info] of Object.entries(ubicacion.horarios)) {
+                const li = document.createElement('li');
+                
+                if (info.abierto) {
+                    li.textContent = `${dias[dia]}: ${info.inicio} - ${info.fin} hrs`;
+                } else {
+                    li.textContent = `${dias[dia]}: Cerrado`;
+                    li.style.color = '#ccc';
+                }
+                
+                listaHorarios.appendChild(li);
             }
-            
-            horariosTexto.innerHTML = textoHorarios;
         }
 
         function abrirGoogleMaps() {
@@ -1717,10 +1768,6 @@
             }
             
             document.getElementById('modal-ubicacion').classList.add('modal-oculto');
-            
-            // Mostrar la dirección seleccionada en el modal de pago
-            document.getElementById('direccion-confirmacion').textContent = `📍 ${ubicacion.direccion}`;
-            
             document.getElementById('modal-pago').classList.remove('modal-oculto');
         }
 
@@ -1818,6 +1865,13 @@
             mensaje += `%0ATotal: $${total} MXN%0A%0A`;
             mensaje += `Ubicación: ${ubicacion.nombre}%0A`;
             mensaje += `Dirección: ${ubicacion.direccion}%0A%0A`;
+            
+            // Verificar si se requiere INE
+            const requiereINE = carrito.some(item => item.requiereINE);
+            if (requiereINE) {
+                mensaje += "⚠️ SE SOLICITARÁ INE AL MOMENTO DE REALIZAR EL PEDIDO%0A%0A";
+            }
+            
             mensaje += "Datos bancarios:%0A";
             mensaje += "Titular: Eric Daniel Gutiérrez Arana%0A";
             mensaje += "CLABE: 012 261 01584933343 3 (BBVA)%0A%0A";
